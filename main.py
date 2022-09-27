@@ -130,6 +130,10 @@ class automaton:
         return ans[:-1]
 
     def print_graph(self):
+        print("DOA: v1")
+        print("Start: ",self.start,sep='')
+        print("Acceptance")  #TODO: output in doa
+
 
 
 
