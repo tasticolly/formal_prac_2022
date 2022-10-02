@@ -19,6 +19,7 @@ class automaton:
             self.terminal = self.parse_terminal(f)
             self.transitions = self.parse_body(f)
             self.reachable = defaultdict(str)
+            self.states = None
 
     def parse_doa(self, f):
         line = f.readline().strip()
@@ -80,6 +81,7 @@ class automaton:
                         count_of_new_states += len(word) - 1
             lines = lines[i:]
         return transitions
+
     def find_eps_close(self, vertions):
         reachable_vertions = vertions
         for vert in vertions:
@@ -107,23 +109,22 @@ class automaton:
             set_current_array_for_symbol = set.union(set_current_array_for_symbol,
                                                      self.find_eps_close(current_array_for_symbol))
             for vert in current_array_for_symbol:
-                if vert in self.terminal or (vert in new_terminal):
+                if vert in self.terminal or vert in new_terminal:
                     new_terminal.add(current_array_for_symbol)
                     break
             for symbol in self.alphabet:
                 new_curr_states = self.extend_vertions(set_current_array_for_symbol, symbol)
                 new_curr_states = self.format(new_curr_states)
 
-                if (not (new_curr_states in new_states)):
+                if not (new_curr_states in new_states):
                     if new_curr_states != "":
                         q.append(new_curr_states)
                     new_states.append(self.format(set_current_array_for_symbol))
-                if (new_curr_states != ""):
+                if new_curr_states != "":
                     new_transitions[current_array_for_symbol].add(f"{new_curr_states},{symbol}")
         self.terminal = new_terminal
         self.transitions = new_transitions
-        new_states = list(set(new_states))
-        self.states = new_states
+        self.states = list(set(new_states))
 
     def format(self, vert):
         vert = sorted(vert)
@@ -165,15 +166,16 @@ class automaton:
                 self.transitions[key].add(f"trash,{symb}")
         self.states.append("trash")
 
-    def to_min_pdka(self):
-        self.dfs(self.start)
-        table = defaultdict(dict)
-        q = deque()
+    def expand_transitions(self):
         reverse_transitions = defaultdict(set)
         for state in self.transitions:
             for to in self.transitions[state]:
                 reverse_transitions[to].add(state)
+        return reverse_transitions
 
+    def fill_table(self, reverse_transitions):
+        q = deque()
+        table = defaultdict(dict)
         for state1 in self.states:
             for state2 in self.states:
                 table[state1][state2] = False
@@ -195,6 +197,14 @@ class automaton:
                             table[to1][to2] = True
                             table[to2][to1] = True
                             q.append((to1, to2))
+
+        return table
+
+    def to_min_pdka(self):
+        self.dfs(self.start)
+        reverse_transitions = self.expand_transitions()
+        table = self.fill_table(reverse_transitions)
+
         count_component = 0
         new_transitions = defaultdict(set)
         new_terminal = set()
@@ -207,11 +217,11 @@ class automaton:
             if component[state1] == 0:
                 count_component += 1
                 component[state1] = count_component
+
             for state2 in sorted(table):
                 if not table[state1][state2] and component[state2] == 0:
                     component[state2] = count_component
                     is_terminal = is_terminal or (state2 in self.terminal)
-
             if is_terminal:
                 new_terminal.add(count_component)
         for elem in self.transitions:
