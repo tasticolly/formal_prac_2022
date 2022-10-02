@@ -4,6 +4,10 @@ from collections import deque
 import sys
 
 
+def get_state(str):
+    return str.split(',')[0]
+
+
 class automaton:
 
     def __init__(self, path: str):
@@ -14,8 +18,7 @@ class automaton:
             self.start = self.parse_start(f)
             self.terminal = self.parse_terminal(f)
             self.transitions = self.parse_body(f)
-
-            print(1)
+            self.reachable = defaultdict(str)
 
     def parse_doa(self, f):
         line = f.readline().strip()
@@ -54,7 +57,6 @@ class automaton:
             elif not line.startswith('State:'):
                 raise Exception(f"{line} should start with 'State:'")
             state = line.split()[1].strip()
-            transitions[state].clear()
             for i, line in enumerate(lines):
                 if line.startswith('State:'):
                     break
@@ -73,12 +75,11 @@ class automaton:
                     else:
                         transitions[f"{state}"].add(f"{-count_of_new_states},{word[0]}")
                         for index in range(count_of_new_states, count_of_new_states + len(word) - 2):
-                            transitions[f"{-index}"].add(f"{-index - 1},{word[index - count_of_new_states]}")
+                            transitions[f"{-index}"].add(f"{- index - 1},{word[index - count_of_new_states]}")
                         transitions[f"{-(count_of_new_states + len(word) - 2)}"].add(f"{to},{word[-1:]}")
                         count_of_new_states += len(word) - 1
             lines = lines[i:]
         return transitions
-
     def find_eps_close(self, vertions):
         reachable_vertions = vertions
         for vert in vertions:
@@ -112,15 +113,17 @@ class automaton:
             for symbol in self.alphabet:
                 new_curr_states = self.extend_vertions(set_current_array_for_symbol, symbol)
                 new_curr_states = self.format(new_curr_states)
-                if (new_curr_states != "" and not (new_curr_states in new_states)):
-                    q.append(new_curr_states)
+
+                if (not (new_curr_states in new_states)):
+                    if new_curr_states != "":
+                        q.append(new_curr_states)
                     new_states.append(self.format(set_current_array_for_symbol))
                 if (new_curr_states != ""):
                     new_transitions[current_array_for_symbol].add(f"{new_curr_states},{symbol}")
         self.terminal = new_terminal
         self.transitions = new_transitions
         new_states = list(set(new_states))
-        print(new_states)
+        self.states = new_states
 
     def format(self, vert):
         vert = sorted(vert)
@@ -132,7 +135,23 @@ class automaton:
     def print_graph(self):
         print("DOA: v1")
         print("Start: ", self.start, sep='')
-        print("Acceptance")  # TODO: output in doa
+        print("Acceptance:", end=" ")
+        print(*self.terminal, sep=" & ")
+        print("--BEGIN--")
+        for transition in self.transitions:
+            print(f"State: {transition}")
+            for elem in self.transitions[transition]:
+                other_state, symbol = elem.split(',')
+                print(f"-> {symbol} {other_state}")
+        print("--END--")
+
+    def dfs(self, state):
+        self.reachable[state] = "gray"
+        for elem in self.transitions[state]:
+            v = elem.split(',')[0]
+            if self.reachable[v] == "":
+                self.dfs(v)
+        self.reachable[state] = "black"
 
     def to_pdka(self):
         for symb in self.alphabet:
@@ -144,8 +163,10 @@ class automaton:
             diff = self.alphabet - alph
             for symb in diff:
                 self.transitions[key].add(f"trash,{symb}")
+        self.states.append("trash")
 
     def to_min_pdka(self):
+        self.dfs(self.start)
         table = defaultdict(dict)
         q = deque()
         reverse_transitions = defaultdict(set)
@@ -153,32 +174,24 @@ class automaton:
             for to in self.transitions[state]:
                 reverse_transitions[to].add(state)
 
-
-
-
-        for state1 in self.transitions:
-            for state2 in self.transitions:
+        for state1 in self.states:
+            for state2 in self.states:
                 table[state1][state2] = False
                 table[state2][state1] = False
 
-
-
-        for state1 in self.transitions:
-            for state2 in self.transitions:
+        for state1 in self.states:
+            for state2 in self.states:
                 if (not table[state1][state2]) and ((state1 in self.terminal) != (state2 in self.terminal)):
                     table[state1][state2] = True
                     table[state2][state1] = True
                     q.append((state1, state2))
-                else:
-                    table[state1][state2] = False
-                    table[state2][state1] = False
 
         while (len(q) != 0):
             state1, state2 = q.popleft()
             for symbol in self.alphabet:
                 for to1 in reverse_transitions[f"{state1},{symbol}"]:
                     for to2 in reverse_transitions[f"{state2},{symbol}"]:
-                        if not table[to1][to2]:
+                        if (not table[to1][to2]):
                             table[to1][to2] = True
                             table[to2][to1] = True
                             q.append((to1, to2))
@@ -186,21 +199,28 @@ class automaton:
         new_transitions = defaultdict(set)
         new_terminal = set()
         component = defaultdict(int)
-        is_terminal = False
-        for state1 in table:
-            if defaultdict[state1] == 0:
+
+        for state1 in sorted(table):
+            is_terminal = False
+            if (self.reachable[state1] != "black"):
+                continue
+            if component[state1] == 0:
                 count_component += 1
-            component[state1] = count_component
-            for state2 in table:
-                if not table[state1][state2]:
+                component[state1] = count_component
+            for state2 in sorted(table):
+                if not table[state1][state2] and component[state2] == 0:
                     component[state2] = count_component
                     is_terminal = is_terminal or (state2 in self.terminal)
-            new_terminal.add(count_component)
+
+            if is_terminal:
+                new_terminal.add(count_component)
         for elem in self.transitions:
             for transition in self.transitions[elem]:
                 trans_state, symb = transition.split(',')
-                new_transitions[component[transition]].add(f"{component[trans_state]},{symb}")
-        pass
+                new_transitions[component[elem]].add(f"{component[trans_state]},{symb}")
+        self.start = component[self.start]
+        self.transitions = new_transitions
+        self.terminal = new_terminal
 
 
 if __name__ == "__main__":
@@ -211,3 +231,4 @@ if __name__ == "__main__":
         a.to_dka()
         a.to_pdka()
         a.to_min_pdka()
+        a.print_graph()
