@@ -1,0 +1,17 @@
+DOA: v1
+Start: 1
+Acceptance: 4
+--BEGIN--
+State: 1
+-> b 4
+-> EPS 2
+State: 2
+-> a 2
+-> b 2
+-> b 3
+State: 3
+-> b 4
+State: 4
+-> a 4
+-> b 4
+--END--

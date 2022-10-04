@@ -65,8 +65,9 @@ def main(path: str):
         transitions = parse_body(f)
 
     print("digraph {")
+    print(f"{start} [color = \"red\"]")
     for state in terminal:
-        print(f"{state} [style = \"filled\"]")
+            print(f"{state} [style = \"filled\"]")
     for state, word, to in transitions:
         print(f"{state} -> {to} [label = \"{word if word != 'EPS' else 'ɛ'}\"]")
     print("}")
