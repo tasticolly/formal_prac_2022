@@ -285,16 +285,3 @@ def is_automation_equal(first, second):
                 q.append((to1, to2))
 
     return True
-
-#
-# if __name__ == "__main__":
-#     if len(sys.argv) != 2:
-#         print("Usage: doa2graphviz file")
-#     else:
-#         a = automaton("tests/ans_test_5")
-#         a.make_min_pdka()
-#         a.print_graph()
-#         # b = automaton("ans_test_1")
-#         # print(is_automation_equal(a, b))
-#
-#         # a.print_graph()
