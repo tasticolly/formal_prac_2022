@@ -1,0 +1,10 @@
+CFG: v1
+Start: S
+Words: abbb & qqwe & asd
+--BEGIN--
+-> S AB
+-> A AB
+-> S ε
+-> A a
+-> B b
+--END--
