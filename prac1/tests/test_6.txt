@@ -1,8 +1,0 @@
-DOA: v1
-Start: 2
-Acceptance: 3
---BEGIN--
-State: 3
--> a 1
--> b 4
---END--
