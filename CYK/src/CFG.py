@@ -1,5 +1,4 @@
-import parse_input
-
+import src.parse_input as parse_input
 
 class CFG:
     def __init__(self, path: str):
@@ -38,8 +37,6 @@ class CFG:
         for word in self.words:
             if (self.is_word_in_CFG(word)):
                 ans.append("YES\n")
-                # print("YES")
             else:
                 ans.append("NO\n")
-                # print("NO")
         return ans

@@ -4,7 +4,6 @@ from collections import defaultdict
 def parse_cfg(f):
     line = f.readline().strip()
 
-
 def parse_start(f):
     line = f.readline().strip()
     return line.split()[1]
