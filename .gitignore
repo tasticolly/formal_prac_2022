@@ -1,2 +1,14 @@
 /CYK/popa
 /CYK/.idea
+prac1/.coverage
+prac1/.idea/
+prac1/__pycache__/
+prac1/ans
+prac1/archive.tar.gz
+prac1/doa2graphviz.py
+prac1/get_graphviz.sh
+prac1/input.txt
+prac1/main.py
+prac1/output/
+prac1/typescript
+prac1/src/__pycache__/
